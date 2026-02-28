@@ -67,10 +67,11 @@ jobs:
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
             --comment "Deploy latest Docker image from GitHub Actions" \
-            --parameters commands="sudo docker pull $IMAGE,
-sudo docker stop cs6620-app || true,
-sudo docker rm cs6620-app || true,
-sudo docker run -d --name cs6620-app --restart unless-stopped -p 80:5000 $IMAGE" \
+            --parameters commands="sudo docker pull $IMAGE, \
+            sudo docker stop cs6620-app || true, \
+            sudo docker rm cs6620-app || true, \
+            sudo docker run -d --name cs6620-app \
+            --restart unless-stopped -p 80:5000 $IMAGE" \
             --query "Command.CommandId" \
             --output text)
 
