@@ -1,4 +1,5 @@
 # To get the newest AWS credentials, restarting the AWS learner's lab is not enough. Refreshing the page is needed.
+# make sure credentials are correctly pasted
 name: Build and Push Docker Image
 
 on:
