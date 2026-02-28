@@ -13,6 +13,7 @@ from flask import (
 from flask_cors import CORS
 from pydub import AudioSegment
 import tempfile
+from datetime import datetime
 
 # Version: 1.0.1
 # Built with GitHub Actions
@@ -362,9 +363,37 @@ def get_status():
             "logLoaded": bool(parsed_transcription_data),
             "csvLoaded": csv_file_loaded,
             "csvRecordCount": len(csv_error_data),
+            return jsonify(
+    {
+        "currentDirectory": current_directory,
+        "files_with_info": files_with_transcription_info,
+        "logLoaded": bool(parsed_transcription_data),
+        "csvLoaded": csv_file_loaded,
+        "csvRecordCount": len(csv_error_data),
+        "version": "2.0",
+        "deployed_via": "GitHub Actions + AWS SSM",
+        "timestamp": datetime.now().isoformat(),
+    }
+)
         }
     )
 
+# --- CI/CD verification endpoints (for assignment proof) ---
+
+APP_VERSION = "2.0"
+DEPLOYMENT_METHOD = "GitHub Actions + AWS SSM"
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify(
+        {
+            "status": "healthy",
+            "version": APP_VERSION,
+            "deployment_method": "automated",
+            "deployed_via": DEPLOYMENT_METHOD,
+            "timestamp": datetime.now().isoformat(),
+        }
+    )
 
 # Error labeling routes
 
