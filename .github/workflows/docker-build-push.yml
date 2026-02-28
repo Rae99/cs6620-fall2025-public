@@ -1,4 +1,4 @@
-# trigger redeploy after AWS credentials refresh
+# To get the newest AWS credentials, restarting the AWS learner's lab is not enough. Refreshing the page is needed.
 name: Build and Push Docker Image
 
 on:
