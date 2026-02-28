@@ -39,3 +39,49 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: Deploy to EC2 via SSM
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials (Learner Lab)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy (docker pull/stop/rm/run) using SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/cs6620-app:latest"
+          INSTANCE_ID="${{ secrets.EC2_INSTANCE_ID }}"
+
+          # Send one SSM command that runs multiple shell commands on the instance
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy latest Docker image from GitHub Actions" \
+            --parameters commands="sudo docker pull $IMAGE,
+sudo docker stop cs6620-app || true,
+sudo docker rm cs6620-app || true,
+sudo docker run -d --name cs6620-app --restart unless-stopped -p 80:5000 $IMAGE" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM CommandId: $CMD_ID"
+
+          # Wait for the command to finish, then print output to Actions logs
+          aws ssm wait command-executed \
+            --command-id "$CMD_ID" \
+            --instance-id "$INSTANCE_ID"
+
+          aws ssm get-command-invocation \
+            --command-id "$CMD_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query "{Status:Status,Stdout:StandardOutputContent,Stderr:StandardErrorContent}"
