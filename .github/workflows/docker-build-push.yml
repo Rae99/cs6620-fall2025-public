@@ -64,22 +64,29 @@ jobs:
           IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/cs6620-app:latest"
           INSTANCE_ID="${{ secrets.EC2_INSTANCE_ID }}"
 
-          # Send one SSM command that runs multiple shell commands on the instance
           CMD_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --comment "Deploy latest Docker image from GitHub Actions" \
-            --parameters commands="sudo docker pull $IMAGE, \
-            sudo docker stop cs6620-app || true, \
-            sudo docker rm cs6620-app || true, \
-            sudo docker run -d --name cs6620-app \
-            --restart unless-stopped -p 80:5000 $IMAGE" \
+            --comment "Install Docker if missing, then deploy latest container" \
+            --parameters 'commands=[
+              "set -e",
+              "if ! command -v docker >/dev/null 2>&1; then",
+              "  echo \"Docker not found. Installing...\"",
+              "  sudo yum update -y || true",
+              "  sudo yum install -y docker",
+              "  sudo systemctl enable docker",
+              "  sudo systemctl start docker",
+              "fi",
+              "sudo docker pull '"$IMAGE"'",
+              "sudo docker stop cs6620-app || true",
+              "sudo docker rm cs6620-app || true",
+              "sudo docker run -d --name cs6620-app --restart unless-stopped -p 80:5000 '"$IMAGE"'"
+            ]' \
             --query "Command.CommandId" \
             --output text)
 
           echo "SSM CommandId: $CMD_ID"
 
-          # Wait for the command to finish, then print output to Actions logs
           aws ssm wait command-executed \
             --command-id "$CMD_ID" \
             --instance-id "$INSTANCE_ID"
