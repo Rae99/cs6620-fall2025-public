@@ -363,18 +363,9 @@ def get_status():
             "logLoaded": bool(parsed_transcription_data),
             "csvLoaded": csv_file_loaded,
             "csvRecordCount": len(csv_error_data),
-            return jsonify(
-    {
-        "currentDirectory": current_directory,
-        "files_with_info": files_with_transcription_info,
-        "logLoaded": bool(parsed_transcription_data),
-        "csvLoaded": csv_file_loaded,
-        "csvRecordCount": len(csv_error_data),
-        "version": "2.0",
-        "deployed_via": "GitHub Actions + AWS SSM",
-        "timestamp": datetime.now().isoformat(),
-    }
-)
+            "version": "2.0",
+            "deployed_via": "GitHub Actions + AWS SSM",
+            "timestamp": datetime.now().isoformat(),
         }
     )
 
